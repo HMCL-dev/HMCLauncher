@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
       - name: Add msbuild to PATH
@@ -15,7 +15,7 @@ jobs:
           msbuild-architecture: x86
       - name: Build HMCLauncher
         run: msbuild /p:Configuration=Release /t:Rebuild .
-      - name: Create SHA-256
+      - name: Create checksum file
         run: Out-File -InputObject (Get-FileHash -Path .\Release\HMCLauncher.exe -Algorithm SHA256).Hash.ToLower() -FilePath .\Release\HMCLauncher.exe.sha256 -NoNewline
       - name: Get short SHA
         run: echo "SHORT_SHA=$("${{ github.sha }}".SubString(0, 7))" >> $env:GITHUB_ENV
