@@ -102,7 +102,7 @@ BEGIN
             VALUE "FileDescription", "Hello Minecraft! Launcher For Windows"
             VALUE "FileVersion", "3.6.0.1"
             VALUE "InternalName", "HMCL.exe"
-            VALUE "LegalCopyright", "Copyright (C) 2021 huangyuhui"
+            VALUE "LegalCopyright", "Copyright (C) 2025 huangyuhui"
             VALUE "OriginalFilename", "HMCL.exe"
             VALUE "ProductName", "Hello Minecraft! Launcher"
             VALUE "ProductVersion", "3.6.0.1"
