@@ -3,3 +3,4 @@ Release
 .vs
 *.APS
 cmake-build-*/
+.idea/
