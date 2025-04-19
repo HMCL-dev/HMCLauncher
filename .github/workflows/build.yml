@@ -1,4 +1,4 @@
-name: Build HMCLauncher
+name: Build
 
 on:
   push:
