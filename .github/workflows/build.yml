@@ -11,23 +11,45 @@ jobs:
         contents: write
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: HMCL-Dev/HMCL
+          ref: main
+          path: HMCL-Build
+      - name: Get short SHA
+        run: echo "SHORT_SHA=$("${{ github.sha }}".SubString(0, 7))" >> $env:GITHUB_ENV
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v2
         with:
           msbuild-architecture: x86
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: 11
+          java-package: 'jdk+fx'
       - name: Build HMCLauncher
         run: msbuild /p:Configuration=Release /t:Rebuild .
       - name: Create checksum file
         run: Out-File -InputObject (Get-FileHash -Path .\Release\HMCLauncher.exe -Algorithm SHA256).Hash.ToLower() -FilePath .\Release\HMCLauncher.exe.sha256 -NoNewline
-      - name: Get short SHA
-        run: echo "SHORT_SHA=$("${{ github.sha }}".SubString(0, 7))" >> $env:GITHUB_ENV
+      - name: Build HMCL
+        run: |
+          $env:HMCL_LAUNCHER_EXE="$env:GITHUB_WORKSPACE\Release\HMCLauncher.exe"
+          Set-Location HMCL-Build
+          .\gradlew makeExecutables --no-daemon
+      - name: Copy Artifacts
+        run: |
+          New-Item -Type Directory -Path Artifacts
+          Copy-Item -Path HMCL-Build\HMCL\build\libs\*.exe -Destination Artifacts
+          Copy-Item -Path HMCL-Build\HMCL\build\libs\*.exe.sha256 -Destination Artifacts
+          Copy-Item -Path Release\HMCLauncher.exe -Destination Artifacts
+          Copy-Item -Path Release\HMCLauncher.exe.sha256 -Destination Artifacts
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: HMCLauncher-${{ env.SHORT_SHA }}
           path: |
-            Release/HMCLauncher.exe
-            Release/HMCLauncher.exe.sha256
+            Artifacts
       - name: Create release
         if: ${{ github.ref_type == 'tag' }}
         uses: softprops/action-gh-release@v2
