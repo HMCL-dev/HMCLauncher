@@ -22,6 +22,12 @@ jobs:
         uses: microsoft/setup-msbuild@v2
         with:
           msbuild-architecture: x86
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: 11
+          java-package: 'jdk+fx'
       - name: Build HMCLauncher
         run: msbuild /p:Configuration=Release /t:Rebuild .
       - name: Create checksum file
@@ -30,9 +36,7 @@ jobs:
         run: |
           $env:HMCL_LAUNCHER_EXE="$env:GITHUB_WORKSPACE\Release\HMCLauncher.exe"
           Set-Location HMCL-Build
-          .\gradlew build --no-daemon
-        env:
-          JAVA_HOME: ${{ env.JAVA_HOME_11_X64 }}
+          .\gradlew makeExecutables --no-daemon
       - name: Copy Artifacts
         run: |
           New-Item -Type Directory -Path Artifacts
