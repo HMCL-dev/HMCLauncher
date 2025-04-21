@@ -5,7 +5,7 @@
 #include "lang.h"
 #include <windows.h>
 
-Version J8(TEXT("8"));
+Version J11(L"11");
 
 extern "C" {
 __declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
@@ -27,7 +27,7 @@ void LaunchJVM(const std::wstring &javaPath, const std::wstring &workdir,
   Version javaVersion(L"");
   if (!MyGetFileVersionInfo(javaPath, javaVersion)) return;
 
-  if (J8 <= javaVersion) {
+  if (J11 <= javaVersion) {
     RawLaunchJVM(javaPath, workdir, jarPath, jvmOptions);
   }
 }
@@ -48,10 +48,6 @@ void FindJavaInDirAndLaunchJVM(const std::wstring &baseDir, const std::wstring &
     } while (FindNextFile(hFind, &data));
     FindClose(hFind);
   }
-}
-
-void OpenHelpPage() {
-    ShellExecute(0, 0, L"https://docs.hmcl.net/help.html", 0, 0, SW_SHOW);
 }
 
 int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
