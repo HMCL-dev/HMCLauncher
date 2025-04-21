@@ -3,14 +3,12 @@
 #include "os.h"
 #include "version.h"
 
-const Version JAVA_8(L"1.8"), JAVA_11(L"11");
+const Version JAVA_11(L"11");
 
 const LPCWSTR JDK_NEW = L"SOFTWARE\\JavaSoft\\JDK";
 const LPCWSTR JRE_NEW = L"SOFTWARE\\JavaSoft\\JRE";
 const LPCWSTR JDK_OLD = L"SOFTWARE\\JavaSoft\\Java Development Kit";
 const LPCWSTR JRE_OLD = L"SOFTWARE\\JavaSoft\\Java Runtime Environment";
-
-bool oldJavaFound = false;
 
 bool FindJavaByRegistryKey(HKEY rootKey, LPCWSTR subKey, std::wstring& path) {
   WCHAR javaVer[MAX_KEY_LENGTH];  // buffer for subkey name, special for
@@ -55,18 +53,16 @@ bool FindJavaByRegistryKey(HKEY rootKey, LPCWSTR subKey, std::wstring& path) {
     if (ERROR_SUCCESS != RegOpenKeyEx(hKey, javaVer, 0, KEY_READ, &javaKey))
       continue;
 
-    if (ERROR_SUCCESS == MyRegQueryValue(javaKey, L"JavaHome", REG_SZ, path)) {
-      if (Version(javaVer) < JAVA_8)
-        oldJavaFound = true;
-      else
-        flag = true;
-    }
+    if (ERROR_SUCCESS != MyRegQueryValue(javaKey, L"JavaHome", REG_SZ, path))
+      continue;
 
-    if (flag) break;
+    if (JAVA_11 <= Version(javaVer)) {
+        flag = true;
+        break;
+    }
   }
 
   RegCloseKey(hKey);
-
   return flag;
 }
 

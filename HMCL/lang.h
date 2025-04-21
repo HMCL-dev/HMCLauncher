@@ -4,9 +4,9 @@
 
 #define ERROR_TITLE_ZH L"未找到 Java"
 
-#define ERROR_PROMPT L"The Java runtime environment is required to run HMCL and Minecraft,\n"\
+#define ERROR_PROMPT L"The Java 11 or later is required to run HMCL and Minecraft,\n"\
                      L"Click 'OK' to start downloading java.\n"\
                      L"Please restart HMCL after installing Java."
 
-#define ERROR_PROMPT_ZH L"运行 HMCL 以及 Minecraft 需要 Java 运行时环境，点击“确定”开始下载。\n"\
+#define ERROR_PROMPT_ZH L"运行 HMCL 以及 Minecraft 需要 Java 11 或更高版本的 Java 运行时环境，点击“确定”开始下载。\n"\
                         L"请在安装 Java 完成后重新启动 HMCL。"
