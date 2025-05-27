@@ -10,6 +10,7 @@ void HLPath::AddBackslash() {
 
 void HLPath::operator+=(const std::wstring& append) {
   AddBackslash();
+  path += append;
 }
 
 HLPath HLPath::operator+(const std::wstring& append) const {
