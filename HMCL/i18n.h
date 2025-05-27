@@ -2,12 +2,10 @@
 
 #include <windows.h>
 
-namespace hmcl {
+struct HLI18N {
+  static HLI18N Instance();
 
-struct I18N {
-  static I18N Instance();
-
+  // Error Messages
   LPCWSTR errorSelfPath;
+  LPCWSTR errorJavaHomeNotExist;
 };
-
-}  // namespace hmcl
