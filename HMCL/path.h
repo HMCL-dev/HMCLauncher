@@ -4,14 +4,18 @@
 #include <utility>
 
 struct HLPath {
-  std::string path;
+  std::wstring path;
 
   HLPath() = default;
-  HLPath(std::string path) : path(std::move(path)) {}
+  HLPath(const HLPath&) = default;
+  explicit(false) HLPath(std::wstring path) : path(std::move(path)) {}
+  explicit(false) HLPath(const wchar_t* path) : path(path) {}
 
   void AddBackslash();
 
-  void operator+=(const std::string& append);
+  void operator+=(const std::wstring& append);
 
-  HLPath operator+(const std::string& append) const;
+  HLPath operator+(const std::wstring& append) const;
+
+  bool IsRegularFile() const;
 };

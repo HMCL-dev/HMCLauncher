@@ -1,3 +1,5 @@
+#include <shlwapi.h>
+
 #include "path.h"
 
 void HLPath::AddBackslash() {
@@ -6,13 +8,19 @@ void HLPath::AddBackslash() {
   }
 }
 
-void HLPath::operator+=(const std::string& append) {
+void HLPath::operator+=(const std::wstring& append) {
   AddBackslash();
-  path += append;
 }
 
-HLPath HLPath::operator+(const std::string& append) const {
+HLPath HLPath::operator+(const std::wstring& append) const {
   HLPath newPath = *this;
   newPath += append;
   return newPath;
+}
+
+bool HLPath::IsRegularFile() const {
+  DWORD attributes = GetFileAttributesW(path.c_str());
+
+  return attributes != INVALID_FILE_ATTRIBUTES && !(attributes & FILE_ATTRIBUTE_DIRECTORY) &&
+         !(attributes & FILE_ATTRIBUTE_REPARSE_POINT);
 }

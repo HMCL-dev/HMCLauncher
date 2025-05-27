@@ -7,5 +7,6 @@ struct HLI18N {
 
   // Error Messages
   LPCWSTR errorSelfPath;
-  LPCWSTR errorJavaHomeNotExist;
+  LPCWSTR errorInvalidHMCLJavaHome;
+  LPCWSTR errorJavaNotFound;
 };
