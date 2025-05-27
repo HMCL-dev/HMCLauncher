@@ -1,9 +1,16 @@
 #pragma once
-#include <windows.h>
+
+#include <vector>
 #include <string>
+#include <cstdint>
 
-// Find Java installation in system registry
-bool FindJavaInRegistry(std::wstring &path);
+namespace hmcl {
 
-// Find Java Installation in registry and environment variable
-bool FindJava(std::wstring &path);
+struct JavaRuntime {
+  static std::vector<JavaRuntime> FindAll();
+
+  std::uint32_t majorVersion;
+  std::wstring path;
+};
+
+}  // namespace hmcl

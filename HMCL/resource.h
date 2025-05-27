@@ -1,7 +1,5 @@
-//{{NO_DEPENDENCIES}}
-// Microsoft Visual C++ 生成的包含文件。
-// 供 HMCL.rc 使用
-//
+// See HMCL.rc
+
 #define IDC_MYICON                      2
 #define IDD_HMCL_DIALOG                 102
 #define IDS_APP_TITLE                   103
