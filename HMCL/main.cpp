@@ -32,7 +32,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
                                  .jvmOptions = HLGetEnvVar(L"HMCL_JAVA_OPTS")};
   HLDebugLog(std::format(L"*** HMCL Launcher {} ***", HMCL_LAUNCHER_VERSION));
   HLDebugLog(std::format(L"Working directory: {}", options.workdir.path));
-  HLDebugLog(std::format(L"Jar File: {}\\{}", options.workdir.path, options.jarPath));
+  HLDebugLog(std::format(L"Exe File: {}\\{}", options.workdir.path, options.jarPath));
   if (options.jvmOptions.has_value()) {
     HLDebugLog(std::format(L"JVM Options: {}", options.jvmOptions.value()));
   } else {
@@ -75,7 +75,6 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
     javaExecutablePath += javaExecutableName;
     if (javaExecutablePath.IsRegularFile()) {
       if (HLLaunchJVM(javaExecutablePath, options, std::nullopt)) {
-        HLDebugLog(std::format(L"Trying packaged Java: {}", javaExecutablePath.path));
         return EXIT_SUCCESS;
       }
     }

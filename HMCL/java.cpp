@@ -1,6 +1,7 @@
 #include <windows.h>
 #include <vector>
 
+#include "debug.h"
 #include "java.h"
 
 HLJavaVersion HLJavaVersion::INVALID = HLJavaVersion{};
@@ -77,8 +78,15 @@ bool HLLaunchJVM(const HLPath &javaExecutablePath, const HLJavaOptions &options,
   STARTUPINFOW startupInfo{.cb = sizeof(STARTUPINFOW)};
   PROCESS_INFORMATION processInformation{};
 
-  return CreateProcessW(nullptr, &command[0], nullptr, nullptr, false, NORMAL_PRIORITY_CLASS, nullptr,
-                        options.workdir.path.c_str(), &startupInfo, &processInformation) != 0;
+  BOOL result = CreateProcessW(nullptr, &command[0], nullptr, nullptr, false, NORMAL_PRIORITY_CLASS, nullptr,
+                        options.workdir.path.c_str(), &startupInfo, &processInformation);
+  if (result) {
+    HLDebugLog(L"Successfully launched HMCL with " + javaExecutablePath.path);
+  } else {
+    HLDebugLog(L"Failed to launch HMCL with " + javaExecutablePath.path);
+  }
+
+  return result;
 }
 
 void HLSearchJavaInDir(HLJavaList &result, const HLPath &basedir, LPCWSTR javaExecutableName) {
