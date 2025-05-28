@@ -19,6 +19,11 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
     javaExecutableName = L"javaw.exe";
   }
 
+  const auto arch = HLGetArchitecture();
+  const bool isX64 = arch == HLArchitecture::X86_64;
+  const bool isARM64 = arch == HLArchitecture::ARM64;
+  const bool isX86 = arch == HLArchitecture::X86;
+
   const auto i18n = HLI18N::Instance();
   const auto selfPath = HLGetSelfPath();
   if (!selfPath.has_value()) {
@@ -31,6 +36,14 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
                                  .jarPath = selfPath.value().second,
                                  .jvmOptions = HLGetEnvVar(L"HMCL_JAVA_OPTS")};
   HLDebugLog(std::format(L"*** HMCL Launcher {} ***", HMCL_LAUNCHER_VERSION));
+  if (isX64) {
+    HLDebugLog(L"System Architecture: x86_64");
+  } else if (isARM64) {
+    HLDebugLog(L"System Architecture: arm64");
+  } else {
+    HLDebugLog(L"System Architecture: x86");
+  }
+
   HLDebugLog(std::format(L"Working directory: {}", options.workdir.path));
   HLDebugLog(std::format(L"Exe File: {}\\{}", options.workdir.path, options.jarPath));
   if (options.jvmOptions.has_value()) {
@@ -41,11 +54,6 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
 
   const auto hmclCurrentDir = options.workdir + L".hmcl";
 
-  const auto arch = HLGetArchitecture();
-  const bool isX64 = arch == HLArchitecture::X86_64;
-  const bool isARM64 = arch == HLArchitecture::ARM64;
-  const bool isX86 = arch == HLArchitecture::X86;
-
   // ------ Find Java ------
 
   // If HMCL_JAVA_HOME is set, it should always be used
@@ -55,7 +63,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
       HLDebugLog(std::format(L"HMCL_JAVA_HOME: {}", hmclJavaHome.value().path));
       HLPath javaExecutablePath = hmclJavaHome.value() + L"bin" + javaExecutableName;
       if (javaExecutablePath.IsRegularFile() && HLLaunchJVM(javaExecutablePath, options, std::nullopt)) {
-        exit(EXIT_SUCCESS);
+        return EXIT_SUCCESS;
       }
       MessageBoxW(nullptr, i18n.errorInvalidHMCLJavaHome, nullptr, MB_OK | MB_ICONERROR);
       return EXIT_FAILURE;
@@ -101,7 +109,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
       auto version = HLJavaVersion::FromJavaExecutable(javaExecutablePath);
       if (version.major >= HL_EXPECTED_JAVA_MAJOR_VERSION) {
         if (javaExecutablePath.IsRegularFile() && HLLaunchJVM(javaExecutablePath, options, version)) {
-          exit(EXIT_SUCCESS);
+          return EXIT_SUCCESS;
         }
       } else if (version.major == HL_LEGACY_JAVA_MAJOR_VERSION) {
         // Add it to the fallback list, to be tried only when no other Java is available
