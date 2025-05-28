@@ -1,0 +1,72 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include <sdkddkver.h>
+#include "windows.h"
+
+#define IDC_MYICON                      2
+#define IDD_HMCL_DIALOG                 102
+#define IDS_APP_TITLE                   103
+#define IDM_ABOUT                       104
+#define IDI_HMCL                        107
+#define IDC_HMCL                        109
+#define IDR_MAINFRAME                   128
+#define ID_SCRIPT_DOWNLOAD_JAVA         160
+#define IDC_STATIC                      -1
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_HMCL                ICON                    "HMCL.ico"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION @PROJECT_VERSION_MAJOR@,@PROJECT_VERSION_MINOR@,@PROJECT_VERSION_PATCH@,@PROJECT_VERSION_TWEAK@
+ PRODUCTVERSION @PROJECT_VERSION_MAJOR@,@PROJECT_VERSION_MINOR@,@PROJECT_VERSION_PATCH@,@PROJECT_VERSION_TWEAK@
+ FILEFLAGSMASK 0x3fL
+ FILEFLAGS 0x0L
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "080404b0"
+        BEGIN
+            VALUE "CompanyName", "huanghongxun"
+            VALUE "FileDescription", "Hello Minecraft! Launcher For Windows"
+            VALUE "FileVersion", "@PROJECT_VERSION@"
+            VALUE "InternalName", "HMCL.exe"
+            VALUE "LegalCopyright", "Copyright (C) 2025 huangyuhui"
+            VALUE "OriginalFilename", "HMCL.exe"
+            VALUE "ProductName", "Hello Minecraft! Launcher"
+            VALUE "ProductVersion", "@PROJECT_VERSION@"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x804, 1200
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE
+BEGIN
+    IDS_APP_TITLE           "HMCL"
+    IDC_HMCL                "HMCL"
+END
+
+

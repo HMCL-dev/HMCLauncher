@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 project(HMCLauncher
         LANGUAGES CXX
+        VERSION 3.6.0.2
 )
 
 set(CMAKE_CXX_STANDARD 20)
@@ -19,11 +20,15 @@ else ()
     add_link_options(-municode -static)
 endif ()
 
+configure_file(HMCL.ico ${CMAKE_CURRENT_BINARY_DIR}/HMCL.ico COPYONLY)
+configure_file(HMCL/HMCL.rc.in ${CMAKE_CURRENT_BINARY_DIR}/HMCL.rc @ONLY)
+
 add_executable(HMCLauncher WIN32
-        HMCL/HMCL.rc HMCL/main.cpp
+        HMCL/main.cpp
         HMCL/platform.cpp HMCL/platform.h
         HMCL/i18n.cpp HMCL/i18n.h
         HMCL/java.cpp HMCL/java.h
         HMCL/path.cpp HMCL/path.h
+        ${CMAKE_CURRENT_BINARY_DIR}/HMCL.rc
 )
 target_link_libraries(HMCLauncher PRIVATE Shlwapi Version)
