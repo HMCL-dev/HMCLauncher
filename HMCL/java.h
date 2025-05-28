@@ -55,7 +55,7 @@ struct HLJavaList {
   std::vector<HLJavaRuntime> runtimes;
   std::unordered_set<std::wstring> paths;
 
-  bool AddIfAcceptable(const HLPath &javaExecutable);
+  bool TryAdd(const HLPath &javaExecutable);
 };
 
 bool HLLaunchJVM(const HLPath &javaExecutablePath, const HLJavaOptions &options,

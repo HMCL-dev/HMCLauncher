@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <algorithm>
 #include <format>
+#include <ranges>
 
 #include <config.h>
 
@@ -52,15 +53,11 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
     HLDebugLog(std::format(L"JVM Options: {}", options.jvmOptions.value()));
   }
 
-  const auto hmclCurrentDir = options.workdir / L".hmcl";
-
-  // ------ Find Java ------
-
   // If HMCL_JAVA_HOME is set, it should always be used
   {
     const auto hmclJavaHome = HLGetEnvPath(L"HMCL_JAVA_HOME");
     if (hmclJavaHome.has_value() && !hmclJavaHome.value().path.empty()) {
-      HLDebugLogVerbose(std::format(L"HMCL_JAVA_HOME is set to {}", hmclJavaHome.value().path));
+      HLDebugLog(L"HMCL_JAVA_HOME: " + hmclJavaHome.value().path);
       HLPath javaExecutablePath = hmclJavaHome.value() / L"bin" / javaExecutableName;
       if (javaExecutablePath.IsRegularFile()) {
         if (HLLaunchJVM(javaExecutablePath, options, std::nullopt)) {
@@ -72,7 +69,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
       MessageBoxW(nullptr, i18n.errorInvalidHMCLJavaHome, nullptr, MB_OK | MB_ICONERROR);
       return EXIT_FAILURE;
     } else {
-      HLDebugLogVerbose(L"HMCL_JAVA_HOME is not set");
+      HLDebugLogVerbose(L"HMCL_JAVA_HOME: Not Found");
     }
   }
 
@@ -89,18 +86,28 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
     javaExecutablePath /= L"bin";
     javaExecutablePath /= javaExecutableName;
     if (javaExecutablePath.IsRegularFile()) {
-      HLDebugLogVerbose(std::format(L"Bundled JRE found: {}", javaExecutablePath.path));
+      HLDebugLog(std::format(L"Bundled JRE: {}", javaExecutablePath.path));
       if (HLLaunchJVM(javaExecutablePath, options, std::nullopt)) {
         return EXIT_SUCCESS;
       }
     } else {
-      HLDebugLogVerbose(std::format(L"Bundled JRE not found"));
+      HLDebugLogVerbose(std::format(L"Bundled JRE: Not Found"));
     }
+  }
+
+  // ------ Search All Java ------
+
+  // To make the log look better, we first print JAVA_HOME
+  const auto javaHome = HLGetEnvPath(L"JAVA_HOME");
+  if (javaHome.has_value() && !javaHome.value().path.empty()) {
+    HLDebugLog(L"JAVA_HOME: " + javaHome.value().path);
+  } else {
+    HLDebugLogVerbose(L"JAVA_HOME: Not Found");
   }
 
   HLJavaList javaRuntimes;
   {
-    HLPath hmclJavaDir = hmclCurrentDir / L"java";
+    HLPath hmclJavaDir = options.workdir / L".hmcl\\java";
     if (isARM64) {
       hmclJavaDir /= L"windows-arm64";
     } else if (isX64) {
@@ -111,16 +118,15 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
     HLSearchJavaInDir(javaRuntimes, hmclJavaDir, javaExecutableName);
   }
 
-  {
-    const auto javaHome = HLGetEnvPath(L"JAVA_HOME");
-    if (javaHome.has_value() && !javaHome.value().path.empty()) {
-      HLPath javaExecutablePath = javaHome.value() / L"bin" / javaExecutableName;
-      if (javaExecutablePath.IsRegularFile()) {
-        javaRuntimes.AddIfAcceptable(javaExecutablePath);
-      } else {
-        HLDebugLog(std::format(L"JAVA_HOME is set to {}, but the Java executable {} does not exist",
-                               javaHome.value().path, javaExecutablePath.path));
-      }
+  if (javaHome.has_value() && !javaHome.value().path.empty()) {
+    HLDebugLogVerbose(L"Checking JAVA_HOME");
+
+    HLPath javaExecutablePath = javaHome.value() / L"bin" / javaExecutableName;
+    if (javaExecutablePath.IsRegularFile()) {
+      javaRuntimes.TryAdd(javaExecutablePath);
+    } else {
+      HLDebugLog(std::format(L"JAVA_HOME is set to {}, but the Java executable {} does not exist",
+                             javaHome.value().path, javaExecutablePath.path));
     }
   }
 
@@ -140,20 +146,21 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
   }
 
   // Search Java in C:\Program Files
+  {
+    std::optional<HLPath> programFilesPath;
+    if (isX64 || isARM64) {
+      programFilesPath = HLGetEnvPath(L"ProgramW6432");
+    } else if (isX86) {
+      programFilesPath = HLGetEnvPath(L"ProgramFiles(x86)");
+    } else {
+      programFilesPath = std::nullopt;
+    }
 
-  std::optional<HLPath> programFilesPath;
-  if (isX64 || isARM64) {
-    programFilesPath = HLGetEnvPath(L"ProgramW6432");
-  } else if (isX86) {
-    programFilesPath = HLGetEnvPath(L"ProgramFiles(x86)");
-  } else {
-    programFilesPath = std::nullopt;
-  }
-
-  if (programFilesPath.has_value() && !programFilesPath.value().path.empty()) {
-    HLSearchJavaInProgramFiles(javaRuntimes, programFilesPath.value(), javaExecutableName);
-  } else {
-    HLDebugLogVerbose(L"Program Files path is not set, skipping search in Program Files");
+    if (programFilesPath.has_value() && !programFilesPath.value().path.empty()) {
+      HLSearchJavaInProgramFiles(javaRuntimes, programFilesPath.value(), javaExecutableName);
+    } else {
+      HLDebugLog(L"Failed to obtain the path to Program Files");
+    }
   }
 
   // Search Java in registry
@@ -170,7 +177,20 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
     HLDebugLog(L"No Java runtime found.");
   } else {
     std::stable_sort(javaRuntimes.runtimes.begin(), javaRuntimes.runtimes.end());
-    for (const auto &item : javaRuntimes.runtimes) {
+
+    if (HLVerboseOutput) {
+      std::wstring message = L"Found Java runtimes:";
+      for (const auto &item : javaRuntimes.runtimes) {
+        message += L"\n  - ";
+        message += item.executablePath.path;
+        message += L", Version ";
+        message += item.version.ToWString();
+      }
+
+      HLDebugLog(message);
+    }
+
+    for (const auto &item : javaRuntimes.runtimes | std::views::reverse) {
       if (HLLaunchJVM(item.executablePath, options, item.version)) {
         return EXIT_SUCCESS;
       }

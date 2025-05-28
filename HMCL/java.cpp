@@ -91,7 +91,7 @@ bool HLLaunchJVM(const HLPath &javaExecutablePath, const HLJavaOptions &options,
 }
 
 void HLSearchJavaInDir(HLJavaList &result, const HLPath &basedir, LPCWSTR javaExecutableName) {
-  HLDebugLogVerbose(std::format(L"Searching for Java in directory: {}", basedir.path));
+  HLDebugLogVerbose(std::format(L"Searching in directory: {}", basedir.path));
 
   HLPath pattern = basedir;
   pattern /= L"*";
@@ -100,7 +100,10 @@ void HLSearchJavaInDir(HLJavaList &result, const HLPath &basedir, LPCWSTR javaEx
   HANDLE hFind = FindFirstFileW(pattern.path.c_str(), &data);  // Search all subdirectory
   if (hFind != INVALID_HANDLE_VALUE) {
     do {
-      result.AddIfAcceptable(basedir / data.cFileName / L"bin" / javaExecutableName);
+      std::wstring fileName = data.cFileName;
+      if (fileName != L"." && fileName != L"..") {
+        result.TryAdd(basedir / data.cFileName / L"bin" / javaExecutableName);
+      }
     } while (FindNextFile(hFind, &data));
     FindClose(hFind);
   }
@@ -117,7 +120,7 @@ void HLSearchJavaInProgramFiles(HLJavaList &result, const HLPath &programFiles, 
 }
 
 void HLSearchJavaInRegistry(HLJavaList &result, LPCWSTR subKey, LPCWSTR javaExecutableName) {
-  HLDebugLogVerbose(std::format(L"Searching for Java in registry key: HKEY_LOCAL_MACHINE\\{}", subKey));
+  HLDebugLogVerbose(std::format(L"Searching in registry key: HKEY_LOCAL_MACHINE\\{}", subKey));
 
   constexpr int MAX_KEY_LENGTH = 255;
 
@@ -155,13 +158,16 @@ void HLSearchJavaInRegistry(HLJavaList &result, LPCWSTR subKey, LPCWSTR javaExec
       continue;
     }
 
-    result.AddIfAcceptable(HLPath(javaHome) / L"bin" / javaExecutableName);
+    result.TryAdd(HLPath(javaHome) / L"bin" / javaExecutableName);
   }
 
   RegCloseKey(hKey);
 }
 
-bool HLJavaList::AddIfAcceptable(const HLPath &javaExecutable) {
+bool HLJavaList::TryAdd(const HLPath &javaExecutable) {
+  if (!javaExecutable.IsRegularFile()) {
+    return false;
+  }
   if (paths.contains(javaExecutable.path)) {
     HLDebugLogVerbose(std::format(L"Ignore duplicate Java {}", javaExecutable.path));
     return false;
@@ -170,7 +176,7 @@ bool HLJavaList::AddIfAcceptable(const HLPath &javaExecutable) {
   auto version = HLJavaVersion::FromJavaExecutable(javaExecutable);
   HLDebugLogVerbose(std::format(L"Found Java {}, Version {}", javaExecutable.path, version.ToWString(),
                                 version.IsAcceptable() ? L"" : L", Ignored"));
-  if (version.IsAcceptable()) {
+  if (!version.IsAcceptable()) {
     return false;
   }
 
