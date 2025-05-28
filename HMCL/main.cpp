@@ -154,7 +154,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
 
     std::wstring message = L"Found the following Java runtimes:";
     for (const auto &item : javaRuntimes.runtimes) {
-      message += std::format(L"\n  Java {}.{}.{}.{}: {}", item.version.major, item.version.minor, item.version.build,
+      message += std::format(L"\n  - Java {}.{}.{}.{}: {}", item.version.major, item.version.minor, item.version.build,
                              item.version.revision, item.executablePath.path);
     }
 
