@@ -12,16 +12,13 @@
 #include "java.h"
 
 int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow) {
+  HLVerboseOutput = HLGetEnvVar(L"HMCL_LAUNCHER_VERBOSE_OUTPUT").value_or(L"") == L"true";
+
   LPCWSTR javaExecutableName;
   if (HLAttachConsole()) {
     javaExecutableName = L"java.exe";
   } else {
     javaExecutableName = L"javaw.exe";
-  }
-
-  {
-    auto verbose = HLGetEnvVar(L"HMCL_LAUNCHER_VERBOSE_OUTPUT");
-    HLVerboseOutput = verbose.has_value() && verbose.value() == L"true";
   }
 
   const auto arch = HLGetArchitecture();
