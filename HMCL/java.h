@@ -5,6 +5,7 @@
 #include <compare>
 #include <optional>
 #include <string>
+#include <unordered_set>
 
 #include "path.h"
 
@@ -38,18 +39,22 @@ struct HLJavaOptions {
   std::optional<std::wstring> jvmOptions;
 };
 
+struct HLJavaList {
+  std::vector<HLJavaRuntime> runtimes;
+  std::unordered_set<std::wstring> paths;
+
+  void Add(const HLJavaRuntime &runtime) {
+    if (paths.insert(runtime.executablePath.path).second) {
+      runtimes.push_back(runtime);
+    }
+  }
+};
+
 bool HLLaunchJVM(const HLPath &javaExecutablePath, const HLJavaOptions &options,
                  const std::optional<HLJavaVersion> &version = std::nullopt);
 
-inline void HLLaunchJVMAndExitOnSuccess(const HLPath &javaExecutablePath, const HLJavaOptions &options,
-                           const std::optional<HLJavaVersion> &version = std::nullopt) {
-  if (javaExecutablePath.IsRegularFile() && HLLaunchJVM(javaExecutablePath, options, version)) {
-    exit(EXIT_SUCCESS);
-  }
-}
+void HLSearchJavaInDir(HLJavaList &result, const HLPath &basedir, LPCWSTR javaExecutableName);
 
-void HLSearchJavaInDir(std::vector<HLJavaRuntime> &result, const HLPath &basedir);
+void HLSearchJavaInProgramFiles(HLJavaList &result, const HLPath &programFiles, LPCWSTR javaExecutableName);
 
-void HLSearchJavaInProgramFiles(std::vector<HLJavaRuntime> &result, const HLPath &programFiles);
-
-void HLSearchJavaInRegistry(std::vector<HLJavaRuntime> &result, HKEY rootKey, LPCWSTR subKey);
+void HLSearchJavaInRegistry(HLJavaList &result, HKEY rootKey, LPCWSTR subKey, LPCWSTR javaExecutableName);

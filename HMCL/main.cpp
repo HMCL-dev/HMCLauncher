@@ -1,18 +1,29 @@
 #include <windows.h>
 #include <cstdlib>
 #include <algorithm>
+#include <format>
 #include <vector>
 
+#include <config.h>
+
+#include "debug.h"
 #include "i18n.h"
 #include "path.h"
 #include "platform.h"
 #include "java.h"
 
 int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow) {
-  const auto i18n = HLI18N::Instance();
+  LPCWSTR javaExecutableName;
+  if (HLAttachConsole()) {
+    javaExecutableName = L"java.exe";
+  } else {
+    javaExecutableName = L"javaw.exe";
+  }
 
+  const auto i18n = HLI18N::Instance();
   const auto selfPath = HLGetSelfPath();
   if (!selfPath.has_value()) {
+    HLDebugLog(L"Failed to get self path");
     MessageBoxW(nullptr, i18n.errorSelfPath, nullptr, MB_OK | MB_ICONERROR);
     return EXIT_FAILURE;
   }
@@ -20,6 +31,14 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
   const HLJavaOptions options = {.workdir = selfPath.value().first,
                                  .jarPath = selfPath.value().second,
                                  .jvmOptions = HLGetEnvVar(L"HMCL_JAVA_OPTS")};
+  HLDebugLog(std::format(L"*** HMCL Launcher {} ***", HMCL_LAUNCHER_VERSION));
+  HLDebugLog(std::format(L"Working directory: {}", options.workdir.path));
+  HLDebugLog(std::format(L"Jar File: {}\\{}", options.workdir.path, options.jarPath));
+  if (options.jvmOptions.has_value()) {
+    HLDebugLog(std::format(L"JVM Options: {}", options.jvmOptions.value()));
+  } else {
+    HLDebugLog(L"JVM Options: Default");
+  }
 
   const auto hmclCurrentDir = options.workdir + L".hmcl";
 
@@ -34,8 +53,11 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
   {
     const auto hmclJavaHome = HLGetEnvPath(L"HMCL_JAVA_HOME");
     if (hmclJavaHome.has_value() && !hmclJavaHome.value().path.empty()) {
-      HLPath javaExecutablePath = hmclJavaHome.value() + L"bin\\javaw.exe";
-      HLLaunchJVMAndExitOnSuccess(javaExecutablePath, options);
+      HLDebugLog(std::format(L"HMCL_JAVA_HOME: {}", hmclJavaHome.value().path));
+      HLPath javaExecutablePath = hmclJavaHome.value() + L"bin" + javaExecutableName;
+      if (javaExecutablePath.IsRegularFile() && HLLaunchJVM(javaExecutablePath, options, std::nullopt)) {
+        exit(EXIT_SUCCESS);
+      }
       MessageBoxW(nullptr, i18n.errorInvalidHMCLJavaHome, nullptr, MB_OK | MB_ICONERROR);
       return EXIT_FAILURE;
     }
@@ -43,20 +65,24 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
 
   // Try the Java packaged together.
   {
-    HLPath javaExecutablePath;
+    HLPath javaExecutablePath = options.workdir;
     if (isARM64) {
-      javaExecutablePath = L"jre-arm64\\bin\\javaw.exe";
-      HLLaunchJVMAndExitOnSuccess(javaExecutablePath, options);
+      javaExecutablePath += L"jre-arm64\\bin";
     } else if (isX64) {
-      javaExecutablePath = L"jre-x64\\bin\\javaw.exe";
-      HLLaunchJVMAndExitOnSuccess(javaExecutablePath, options);
+      javaExecutablePath += L"jre-x64\\bin";
     } else {
-      javaExecutablePath = L"jre-x86\\bin\\javaw.exe";
-      HLLaunchJVMAndExitOnSuccess(javaExecutablePath, options);
+      javaExecutablePath += L"jre-x86\\bin";
+    }
+    javaExecutablePath += javaExecutableName;
+    if (javaExecutablePath.IsRegularFile()) {
+      if (HLLaunchJVM(javaExecutablePath, options, std::nullopt)) {
+        HLDebugLog(std::format(L"Trying packaged Java: {}", javaExecutablePath.path));
+        return EXIT_SUCCESS;
+      }
     }
   }
 
-  std::vector<HLJavaRuntime> javaRuntimes{};
+  HLJavaList javaRuntimes;
 
   {
     HLPath hmclJavaDir = hmclCurrentDir + L"java";
@@ -67,19 +93,21 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
     } else {
       hmclJavaDir += L"windows-x86";
     }
-    HLSearchJavaInDir(javaRuntimes, hmclJavaDir);
+    HLSearchJavaInDir(javaRuntimes, hmclJavaDir, javaExecutableName);
   }
 
   {
     const auto javaHome = HLGetEnvPath(L"JAVA_HOME");
     if (javaHome.has_value() && !javaHome.value().path.empty()) {
-      HLPath javaExecutablePath = javaHome.value() + L"bin\\javaw.exe";
+      HLPath javaExecutablePath = javaHome.value() + L"bin" + javaExecutableName;
       auto version = HLJavaVersion::FromJavaExecutable(javaExecutablePath);
       if (version.major >= HL_EXPECTED_JAVA_MAJOR_VERSION) {
-        HLLaunchJVMAndExitOnSuccess(javaExecutablePath, options, version);
+        if (javaExecutablePath.IsRegularFile() && HLLaunchJVM(javaExecutablePath, options, version)) {
+          exit(EXIT_SUCCESS);
+        }
       } else if (version.major == HL_LEGACY_JAVA_MAJOR_VERSION) {
         // Add it to the fallback list, to be tried only when no other Java is available
-        javaRuntimes.push_back(HLJavaRuntime{.version = version, .executablePath = javaExecutablePath});
+        javaRuntimes.Add(HLJavaRuntime{.version = version, .executablePath = javaExecutablePath});
       }
     }
   }
@@ -95,7 +123,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
       } else {
         hmclJavaDir += L"windows-x86";
       }
-      HLSearchJavaInDir(javaRuntimes, hmclJavaDir);
+      HLSearchJavaInDir(javaRuntimes, hmclJavaDir, javaExecutableName);
     }
   }
 
@@ -111,23 +139,25 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
   }
 
   if (programFilesPath.has_value() && !programFilesPath.value().path.empty()) {
-    HLSearchJavaInProgramFiles(javaRuntimes, programFilesPath.value());
+    HLSearchJavaInProgramFiles(javaRuntimes, programFilesPath.value(), javaExecutableName);
   }
 
   // Search Java in registry
 
-  HLSearchJavaInRegistry(javaRuntimes, HKEY_LOCAL_MACHINE, L"SOFTWARE\\JavaSoft\\JDK");
-  HLSearchJavaInRegistry(javaRuntimes, HKEY_LOCAL_MACHINE, L"SOFTWARE\\JavaSoft\\JRE");
+  HLSearchJavaInRegistry(javaRuntimes, HKEY_LOCAL_MACHINE, L"SOFTWARE\\JavaSoft\\JDK", javaExecutableName);
+  HLSearchJavaInRegistry(javaRuntimes, HKEY_LOCAL_MACHINE, L"SOFTWARE\\JavaSoft\\JRE", javaExecutableName);
 
   // TODO: They are only used in Java 8 or earlier, so they should be removed in the future
-  HLSearchJavaInRegistry(javaRuntimes, HKEY_LOCAL_MACHINE, L"SOFTWARE\\JavaSoft\\Java Development Kit");
-  HLSearchJavaInRegistry(javaRuntimes, HKEY_LOCAL_MACHINE, L"SOFTWARE\\JavaSoft\\Java Runtime Environment");
+  HLSearchJavaInRegistry(javaRuntimes, HKEY_LOCAL_MACHINE, L"SOFTWARE\\JavaSoft\\Java Development Kit",
+                         javaExecutableName);
+  HLSearchJavaInRegistry(javaRuntimes, HKEY_LOCAL_MACHINE, L"SOFTWARE\\JavaSoft\\Java Runtime Environment",
+                         javaExecutableName);
 
   // Try to launch JVM
 
-  if (!javaRuntimes.empty()) {
-    std::stable_sort(javaRuntimes.begin(), javaRuntimes.end());
-    for (const auto &item : javaRuntimes) {
+  if (!javaRuntimes.runtimes.empty()) {
+    std::stable_sort(javaRuntimes.runtimes.begin(), javaRuntimes.runtimes.end());
+    for (const auto &item : javaRuntimes.runtimes) {
       if (HLLaunchJVM(item.executablePath, options, item.version)) {
         return EXIT_SUCCESS;
       }

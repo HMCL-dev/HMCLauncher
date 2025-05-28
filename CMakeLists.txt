@@ -20,8 +20,11 @@ else ()
     add_link_options(-municode -static)
 endif ()
 
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+
 configure_file(HMCL.ico ${CMAKE_CURRENT_BINARY_DIR}/HMCL.ico COPYONLY)
 configure_file(HMCL/HMCL.rc.in ${CMAKE_CURRENT_BINARY_DIR}/HMCL.rc @ONLY)
+configure_file(HMCL/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config.h @ONLY)
 
 add_executable(HMCLauncher WIN32
         ${CMAKE_CURRENT_BINARY_DIR}/HMCL.rc

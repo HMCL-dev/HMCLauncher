@@ -81,7 +81,7 @@ bool HLLaunchJVM(const HLPath &javaExecutablePath, const HLJavaOptions &options,
                         options.workdir.path.c_str(), &startupInfo, &processInformation) != 0;
 }
 
-void HLSearchJavaInDir(std::vector<HLJavaRuntime> &result, const HLPath &basedir) {
+void HLSearchJavaInDir(HLJavaList &result, const HLPath &basedir, LPCWSTR javaExecutableName) {
   HLPath pattern = basedir;
   pattern += L"*";
 
@@ -91,11 +91,12 @@ void HLSearchJavaInDir(std::vector<HLJavaRuntime> &result, const HLPath &basedir
     do {
       HLPath javaw = basedir;
       javaw += data.cFileName;
-      javaw += L"bin\\javaw.exe";
+      javaw += L"bin\\";
+      javaw += javaExecutableName;
 
       auto version = HLJavaVersion::FromJavaExecutable(javaw);
       if (version.major >= HL_EXPECTED_JAVA_MAJOR_VERSION || version.major == HL_LEGACY_JAVA_MAJOR_VERSION) {
-        result.push_back(HLJavaRuntime{
+        result.Add(HLJavaRuntime{
             .version = version,
             .executablePath = javaw,
         });
@@ -108,14 +109,16 @@ void HLSearchJavaInDir(std::vector<HLJavaRuntime> &result, const HLPath &basedir
 static const LPCWSTR VENDORS[] = {L"Java",         L"Microsoft", L"BellSoft", L"Zulu", L"Eclipse Foundation",
                                   L"AdoptOpenJDK", L"Semeru"};
 
-void HLSearchJavaInProgramFiles(std::vector<HLJavaRuntime> &result, const HLPath &programFiles) {
+void HLSearchJavaInProgramFiles(HLJavaList &result, const HLPath &programFiles,
+                                LPCWSTR javaExecutableName) {
   for (LPCWSTR vendorDir : VENDORS) {
     HLPath dir = programFiles + vendorDir;
-    HLSearchJavaInDir(result, dir);
+    HLSearchJavaInDir(result, dir, javaExecutableName);
   }
 }
 
-void HLSearchJavaInRegistry(std::vector<HLJavaRuntime> &result, HKEY rootKey, LPCWSTR subKey) {
+void HLSearchJavaInRegistry(HLJavaList &result, HKEY rootKey, LPCWSTR subKey,
+                            LPCWSTR javaExecutableName) {
   constexpr int MAX_KEY_LENGTH = 255;
 
   WCHAR javaVer[MAX_KEY_LENGTH];  // buffer for subkey name, special for
@@ -153,11 +156,12 @@ void HLSearchJavaInRegistry(std::vector<HLJavaRuntime> &result, HKEY rootKey, LP
     }
 
     HLPath javaExecutablePath = javaHome;
-    javaExecutablePath += L"bin\\javaw.exe";
+    javaExecutablePath += L"bin";
+    javaExecutablePath += javaExecutableName;
 
     HLJavaVersion version = HLJavaVersion::FromJavaExecutable(javaExecutablePath);
     if (version.major >= HL_EXPECTED_JAVA_MAJOR_VERSION || version.major == HL_LEGACY_JAVA_MAJOR_VERSION) {
-      result.push_back(HLJavaRuntime{
+      result.Add(HLJavaRuntime{
           .version = version,
           .executablePath = javaExecutablePath,
       });
