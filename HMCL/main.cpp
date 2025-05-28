@@ -29,12 +29,14 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
   // ------ Find Java ------
 
   // If HMCL_JAVA_HOME is set, it should always be used
-  const auto hmclJavaHome = HLGetEnvPath(L"HMCL_JAVA_HOME");
-  if (hmclJavaHome.has_value() && !hmclJavaHome.value().path.empty()) {
-    HLPath javaExecutablePath = hmclJavaHome.value() + L"bin\\javaw.exe";
-    HLLaunchJVMAndExitOnSuccess(javaExecutablePath, options);
-    MessageBoxW(nullptr, i18n.errorInvalidHMCLJavaHome, nullptr, MB_OK | MB_ICONERROR);
-    return EXIT_FAILURE;
+  {
+    const auto hmclJavaHome = HLGetEnvPath(L"HMCL_JAVA_HOME");
+    if (hmclJavaHome.has_value() && !hmclJavaHome.value().path.empty()) {
+      HLPath javaExecutablePath = hmclJavaHome.value() + L"bin\\javaw.exe";
+      HLLaunchJVMAndExitOnSuccess(javaExecutablePath, options);
+      MessageBoxW(nullptr, i18n.errorInvalidHMCLJavaHome, nullptr, MB_OK | MB_ICONERROR);
+      return EXIT_FAILURE;
+    }
   }
 
   // Try the Java packaged together.
@@ -54,16 +56,22 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
     HLLaunchJVMAndExitOnSuccess(javaExecutablePath, options);
   }
 
-  const auto javaHome = HLGetEnvPath(L"JAVA_HOME");
-  if (javaHome.has_value() && !javaHome.value().path.empty()) {
-    HLPath javaExecutablePath = javaHome.value() + L"bin\\javaw.exe";
-    auto version = HLJavaVersion::FromJavaExecutable(javaExecutablePath);
-    if (version.major >= HL_EXPECTED_JAVA_MAJOR_VERSION) {
-      HLLaunchJVMAndExitOnSuccess(javaExecutablePath, options, version);
+  std::vector<HLJavaRuntime> javaRuntimes{};
+
+  // Then try
+  {
+    const auto javaHome = HLGetEnvPath(L"JAVA_HOME");
+    if (javaHome.has_value() && !javaHome.value().path.empty()) {
+      HLPath javaExecutablePath = javaHome.value() + L"bin\\javaw.exe";
+      auto version = HLJavaVersion::FromJavaExecutable(javaExecutablePath);
+      if (version.major >= HL_EXPECTED_JAVA_MAJOR_VERSION) {
+        HLLaunchJVMAndExitOnSuccess(javaExecutablePath, options, version);
+      } else if (version.major == HL_LEGACY_JAVA_MAJOR_VERSION) {
+        // Add it to the fallback list, to be tried only when no other Java is available
+        javaRuntimes.push_back(HLJavaRuntime{.version = version, .executablePath = javaExecutablePath});
+      }
     }
   }
-
-  std::vector<HLJavaRuntime> javaRuntimes{};
 
   // Search Java in C:\Program Files
 
@@ -94,7 +102,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
   if (!javaRuntimes.empty()) {
     std::stable_sort(javaRuntimes.begin(), javaRuntimes.end());
     for (const auto &item : javaRuntimes) {
-      if (HLLaunchJVM(item.executablePath, options)) {
+      if (HLLaunchJVM(item.executablePath, options, item.version)) {
         return EXIT_SUCCESS;
       }
     }
