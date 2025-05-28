@@ -1,5 +1,4 @@
 #include <objbase.h>
-#include <shlobj_core.h>
 
 #include "path.h"
 #include "platform.h"

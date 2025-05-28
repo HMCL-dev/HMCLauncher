@@ -42,5 +42,5 @@ void HLStartDebugLogger(const HLPath &hmclCurrentDir) {
 void HLDebugLog(const std::wstring &message) {
   SYSTEMTIME time;
   GetLocalTime(&time);
-  wprintf(L"[%02d:%02d:%02d] [HMCLauncher] %s\n", time.wHour, time.wMinute, time.wSecond, message.c_str());
+  wprintf(L"[%02d:%02d:%02d] [HMCLauncher] %ls\n", time.wHour, time.wMinute, time.wSecond, message.c_str());
 }
