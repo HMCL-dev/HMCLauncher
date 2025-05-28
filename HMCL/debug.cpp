@@ -5,6 +5,8 @@
 static HANDLE debugLoggerHandle = nullptr;
 static bool consoleAllocated = false;
 
+bool HLVerboseOutput = false;
+
 bool HLAttachConsole(bool force) {
   if (AttachConsole(ATTACH_PARENT_PROCESS)) {
     FILE *stream = nullptr;
@@ -21,7 +23,7 @@ bool HLAttachConsole(bool force) {
 void HLStartDebugLogger(const HLPath &hmclCurrentDir) {
   // TODO: Make directories if not exist
   for (int i = 0; i < 9; ++i) {
-    HLPath path = hmclCurrentDir + L"logs\\hmclauncher.log";
+    HLPath path = hmclCurrentDir / L"logs\\hmclauncher.log";
     if (i > 0) {
       path.path.push_back(L'.');
       path.path.push_back(static_cast<wchar_t>(L'0' + i));

@@ -13,9 +13,9 @@ struct HLPath {
 
   void AddBackslash();
 
-  void operator+=(const std::wstring& append);
+  HLPath operator/(const std::wstring& append) const;
 
-  HLPath operator+(const std::wstring& append) const;
+  void operator/=(const std::wstring& append);
 
   bool IsRegularFile() const;
 };

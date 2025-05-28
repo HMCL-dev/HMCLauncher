@@ -8,14 +8,14 @@ void HLPath::AddBackslash() {
   }
 }
 
-void HLPath::operator+=(const std::wstring& append) {
+void HLPath::operator/=(const std::wstring& append) {
   AddBackslash();
   path += append;
 }
 
-HLPath HLPath::operator+(const std::wstring& append) const {
+HLPath HLPath::operator/(const std::wstring& append) const {
   HLPath newPath = *this;
-  newPath += append;
+  newPath /= append;
   return newPath;
 }
 

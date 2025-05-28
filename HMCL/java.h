@@ -24,6 +24,18 @@ struct HLJavaVersion {
   std::uint16_t revision;
 
   std::strong_ordering operator<=>(const HLJavaVersion &other) const = default;
+
+  [[nodiscard]] bool IsAcceptable() const {
+    return major >= HL_EXPECTED_JAVA_MAJOR_VERSION || major == HL_LEGACY_JAVA_MAJOR_VERSION;
+  }
+
+  [[nodiscard]] std::wstring ToWString() const {
+    if (major != 0) {
+      return std::format(L"{}.{}.{}.{}", major, minor, build, revision);
+    } else {
+      return L"Unknown";
+    }
+  }
 };
 
 struct HLJavaRuntime {
@@ -43,11 +55,7 @@ struct HLJavaList {
   std::vector<HLJavaRuntime> runtimes;
   std::unordered_set<std::wstring> paths;
 
-  void Add(const HLJavaRuntime &runtime) {
-    if (paths.insert(runtime.executablePath.path).second) {
-      runtimes.push_back(runtime);
-    }
-  }
+  bool AddIfAcceptable(const HLPath &javaExecutable);
 };
 
 bool HLLaunchJVM(const HLPath &javaExecutablePath, const HLJavaOptions &options,
@@ -57,4 +65,4 @@ void HLSearchJavaInDir(HLJavaList &result, const HLPath &basedir, LPCWSTR javaEx
 
 void HLSearchJavaInProgramFiles(HLJavaList &result, const HLPath &programFiles, LPCWSTR javaExecutableName);
 
-void HLSearchJavaInRegistry(HLJavaList &result, HKEY rootKey, LPCWSTR subKey, LPCWSTR javaExecutableName);
+void HLSearchJavaInRegistry(HLJavaList &result, LPCWSTR subKey, LPCWSTR javaExecutableName);
