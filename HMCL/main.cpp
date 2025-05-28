@@ -2,7 +2,6 @@
 #include <cstdlib>
 #include <algorithm>
 #include <format>
-#include <vector>
 
 #include <config.h>
 
@@ -147,16 +146,19 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
   HLSearchJavaInRegistry(javaRuntimes, HKEY_LOCAL_MACHINE, L"SOFTWARE\\JavaSoft\\JDK", javaExecutableName);
   HLSearchJavaInRegistry(javaRuntimes, HKEY_LOCAL_MACHINE, L"SOFTWARE\\JavaSoft\\JRE", javaExecutableName);
 
-  // TODO: They are only used in Java 8 or earlier, so they should be removed in the future
-  HLSearchJavaInRegistry(javaRuntimes, HKEY_LOCAL_MACHINE, L"SOFTWARE\\JavaSoft\\Java Development Kit",
-                         javaExecutableName);
-  HLSearchJavaInRegistry(javaRuntimes, HKEY_LOCAL_MACHINE, L"SOFTWARE\\JavaSoft\\Java Runtime Environment",
-                         javaExecutableName);
-
   // Try to launch JVM
 
-  if (!javaRuntimes.runtimes.empty()) {
+  if (javaRuntimes.runtimes.empty()) {
+    HLDebugLog(L"No Java runtime found.");
+  } else {
     std::stable_sort(javaRuntimes.runtimes.begin(), javaRuntimes.runtimes.end());
+
+    std::wstring message = L"Found the following Java runtimes:";
+    for (const auto &item : javaRuntimes.runtimes) {
+      message += std::format(L"\n  Java {}.{}.{}.{}: {}", item.version.major, item.version.minor, item.version.build,
+                             item.version.revision, item.executablePath.path);
+    }
+
     for (const auto &item : javaRuntimes.runtimes) {
       if (HLLaunchJVM(item.executablePath, options, item.version)) {
         return EXIT_SUCCESS;
@@ -165,7 +167,6 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
   }
 
   LPCWSTR downloadLink;
-
   if (isARM64) {
     downloadLink = L"https://docs.hmcl.net/downloads/windows/arm64.html";
   } else if (isX64) {
