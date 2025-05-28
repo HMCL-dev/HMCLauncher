@@ -33,7 +33,7 @@ struct HLJavaRuntime {
 };
 
 struct HLJavaOptions {
-  std::wstring workdir;
+  HLPath workdir;
   std::wstring jarPath;
   std::optional<std::wstring> jvmOptions;
 };

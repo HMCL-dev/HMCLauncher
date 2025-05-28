@@ -78,7 +78,7 @@ bool HLLaunchJVM(const HLPath &javaExecutablePath, const HLJavaOptions &options,
   PROCESS_INFORMATION processInformation{};
 
   return CreateProcessW(nullptr, &command[0], nullptr, nullptr, false, NORMAL_PRIORITY_CLASS, nullptr,
-                        options.workdir.c_str(), &startupInfo, &processInformation) != 0;
+                        options.workdir.path.c_str(), &startupInfo, &processInformation) != 0;
 }
 
 void HLSearchJavaInDir(std::vector<HLJavaRuntime> &result, const HLPath &basedir) {

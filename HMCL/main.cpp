@@ -17,9 +17,11 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
     return EXIT_FAILURE;
   }
 
-  HLJavaOptions options = {.workdir = selfPath.value().first,
-                           .jarPath = selfPath.value().second,
-                           .jvmOptions = HLGetEnvVar(L"HMCL_JAVA_OPTS")};
+  const HLJavaOptions options = {.workdir = selfPath.value().first,
+                                 .jarPath = selfPath.value().second,
+                                 .jvmOptions = HLGetEnvVar(L"HMCL_JAVA_OPTS")};
+
+  const auto hmclCurrentDir = options.workdir + L".hmcl";
 
   const auto arch = HLGetArchitecture();
   const bool isX64 = arch == HLArchitecture::X86_64;
@@ -45,20 +47,29 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
     if (isARM64) {
       javaExecutablePath = L"jre-arm64\\bin\\javaw.exe";
       HLLaunchJVMAndExitOnSuccess(javaExecutablePath, options);
-    }
-
-    if (isARM64 || isX64) {
+    } else if (isX64) {
       javaExecutablePath = L"jre-x64\\bin\\javaw.exe";
       HLLaunchJVMAndExitOnSuccess(javaExecutablePath, options);
+    } else {
+      javaExecutablePath = L"jre-x86\\bin\\javaw.exe";
+      HLLaunchJVMAndExitOnSuccess(javaExecutablePath, options);
     }
-
-    javaExecutablePath = L"jre-x86\\bin\\javaw.exe";
-    HLLaunchJVMAndExitOnSuccess(javaExecutablePath, options);
   }
 
   std::vector<HLJavaRuntime> javaRuntimes{};
 
-  // Then try
+  {
+    HLPath hmclJavaDir = hmclCurrentDir + L"java";
+    if (isARM64) {
+      hmclJavaDir += L"windows-arm64";
+    } else if (isX64) {
+      hmclJavaDir += L"windows-x86_64";
+    } else {
+      hmclJavaDir += L"windows-x86";
+    }
+    HLSearchJavaInDir(javaRuntimes, hmclJavaDir);
+  }
+
   {
     const auto javaHome = HLGetEnvPath(L"JAVA_HOME");
     if (javaHome.has_value() && !javaHome.value().path.empty()) {
@@ -70,6 +81,21 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
         // Add it to the fallback list, to be tried only when no other Java is available
         javaRuntimes.push_back(HLJavaRuntime{.version = version, .executablePath = javaExecutablePath});
       }
+    }
+  }
+
+  {
+    const auto appDataPath = HLGetEnvPath(L"APPDATA");
+    if (appDataPath.has_value() && !appDataPath.value().path.empty()) {
+      HLPath hmclJavaDir = appDataPath.value() + L".hmcl\\java";
+      if (isARM64) {
+        hmclJavaDir += L"windows-arm64";
+      } else if (isX64) {
+        hmclJavaDir += L"windows-x86_64";
+      } else {
+        hmclJavaDir += L"windows-x86";
+      }
+      HLSearchJavaInDir(javaRuntimes, hmclJavaDir);
     }
   }
 

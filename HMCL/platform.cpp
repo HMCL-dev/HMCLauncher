@@ -52,10 +52,10 @@ HLArchitecture HLGetArchitecture() {
   return HLArchitecture::X86;
 }
 
-std::optional<std::pair<std::wstring, std::wstring>> HLGetSelfPath() {
+std::optional<std::pair<HLPath, std::wstring>> HLGetSelfPath() {
   DWORD res, size = MAX_PATH;
   std::wstring selfPath(size, L'\0');
-  while ((res = GetModuleFileName(nullptr, &selfPath[0], size)) == size) {
+  while ((res = GetModuleFileNameW(nullptr, &selfPath[0], size)) == size) {
     selfPath.resize(size += MAX_PATH);
   }
   if (res == 0) return std::nullopt;
@@ -64,7 +64,7 @@ std::optional<std::pair<std::wstring, std::wstring>> HLGetSelfPath() {
 
   size_t last_slash = selfPath.find_last_of(L"/\\");
   if (last_slash != std::wstring::npos && last_slash + 1 < selfPath.size()) {
-    return std::optional{std::pair{selfPath.substr(0, last_slash), selfPath.substr(last_slash + 1)}};
+    return std::optional{std::pair{HLPath{selfPath.substr(0, last_slash)}, selfPath.substr(last_slash + 1)}};
   } else {
     return std::nullopt;
   }
