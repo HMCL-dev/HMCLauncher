@@ -32,7 +32,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
   const auto hmclJavaHome = HLGetEnvPath(L"HMCL_JAVA_HOME");
   if (hmclJavaHome.has_value() && !hmclJavaHome.value().path.empty()) {
     HLPath javaExecutablePath = hmclJavaHome.value() + L"bin\\javaw.exe";
-    HLTryLaunchJVM(javaExecutablePath, options);
+    HLLaunchJVMAndExitOnSuccess(javaExecutablePath, options);
     MessageBoxW(nullptr, i18n.errorInvalidHMCLJavaHome, nullptr, MB_OK | MB_ICONERROR);
     return EXIT_FAILURE;
   }
@@ -42,16 +42,25 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
     HLPath javaExecutablePath;
     if (isARM64) {
       javaExecutablePath = L"jre-arm64\\bin\\javaw.exe";
-      HLTryLaunchJVM(javaExecutablePath, options);
+      HLLaunchJVMAndExitOnSuccess(javaExecutablePath, options);
     }
 
     if (isARM64 || isX64) {
       javaExecutablePath = L"jre-x64\\bin\\javaw.exe";
-      HLTryLaunchJVM(javaExecutablePath, options);
+      HLLaunchJVMAndExitOnSuccess(javaExecutablePath, options);
     }
 
     javaExecutablePath = L"jre-x86\\bin\\javaw.exe";
-    HLTryLaunchJVM(javaExecutablePath, options);
+    HLLaunchJVMAndExitOnSuccess(javaExecutablePath, options);
+  }
+
+  const auto javaHome = HLGetEnvPath(L"JAVA_HOME");
+  if (javaHome.has_value() && !javaHome.value().path.empty()) {
+    HLPath javaExecutablePath = javaHome.value() + L"bin\\javaw.exe";
+    auto version = HLJavaVersion::FromJavaExecutable(javaExecutablePath);
+    if (version.major >= HL_EXPECTED_JAVA_MAJOR_VERSION) {
+      HLLaunchJVMAndExitOnSuccess(javaExecutablePath, options, version);
+    }
   }
 
   std::vector<HLJavaRuntime> javaRuntimes{};
@@ -102,7 +111,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
   }
 
   if (MessageBoxW(nullptr, i18n.errorJavaNotFound, nullptr, MB_ICONWARNING | MB_OKCANCEL) == IDOK) {
-    ShellExecuteW(0, 0, downloadLink, 0, 0, SW_SHOW);
+    ShellExecuteW(nullptr, nullptr, downloadLink, nullptr, nullptr, SW_SHOW);
   }
   return EXIT_FAILURE;
 }

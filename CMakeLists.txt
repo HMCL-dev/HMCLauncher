@@ -24,11 +24,12 @@ configure_file(HMCL.ico ${CMAKE_CURRENT_BINARY_DIR}/HMCL.ico COPYONLY)
 configure_file(HMCL/HMCL.rc.in ${CMAKE_CURRENT_BINARY_DIR}/HMCL.rc @ONLY)
 
 add_executable(HMCLauncher WIN32
+        ${CMAKE_CURRENT_BINARY_DIR}/HMCL.rc
         HMCL/main.cpp
         HMCL/platform.cpp HMCL/platform.h
         HMCL/i18n.cpp HMCL/i18n.h
         HMCL/java.cpp HMCL/java.h
         HMCL/path.cpp HMCL/path.h
-        ${CMAKE_CURRENT_BINARY_DIR}/HMCL.rc
+        HMCL/debug.cpp HMCL/debug.h
 )
 target_link_libraries(HMCLauncher PRIVATE Shlwapi Version)

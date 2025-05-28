@@ -41,7 +41,7 @@ struct HLJavaOptions {
 bool HLLaunchJVM(const HLPath &javaExecutablePath, const HLJavaOptions &options,
                  const std::optional<HLJavaVersion> &version = std::nullopt);
 
-inline void HLTryLaunchJVM(const HLPath &javaExecutablePath, const HLJavaOptions &options,
+inline void HLLaunchJVMAndExitOnSuccess(const HLPath &javaExecutablePath, const HLJavaOptions &options,
                            const std::optional<HLJavaVersion> &version = std::nullopt) {
   if (javaExecutablePath.IsRegularFile() && HLLaunchJVM(javaExecutablePath, options, version)) {
     exit(EXIT_SUCCESS);
