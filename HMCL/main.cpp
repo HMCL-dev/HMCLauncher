@@ -151,7 +151,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
     if (isX64 || isARM64) {
       programFilesPath = HLGetEnvPath(L"ProgramW6432");
     } else if (isX86) {
-      programFilesPath = HLGetEnvPath(L"ProgramFiles(x86)");
+      programFilesPath = HLGetEnvPath(L"ProgramFiles");
     } else {
       programFilesPath = std::nullopt;
     }
