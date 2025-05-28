@@ -5,8 +5,7 @@
 HLI18N HLI18N::Instance() {
   HLI18N i18n = {.errorSelfPath = L"Failed to get the exe path.",
                  .errorInvalidHMCLJavaHome =
-                     L"\n"
-                     "The Java path specified by HMCL_JAVA_HOME is invalid. Please update it to a valid Java "
+                     L"The Java path specified by HMCL_JAVA_HOME is invalid. Please update it to a valid Java "
                      "installation path or remove this environment variable.",
                  .errorJavaNotFound =
                      L"The Java runtime environment is required to run HMCL and Minecraft,\n"
