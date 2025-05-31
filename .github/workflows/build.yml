@@ -57,5 +57,5 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            Release/HMCLauncher.exe
-            Release/HMCLauncher.exe.sha256
+            build/Release/HMCLauncher.exe
+            build/Release/HMCLauncher.exe.sha256
