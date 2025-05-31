@@ -5,3 +5,4 @@ Release
 cmake-build-*/
 .idea/
 publish/libs
+/build/

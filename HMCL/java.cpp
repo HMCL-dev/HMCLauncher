@@ -1,84 +1,191 @@
-﻿#include "stdafx.h"
+#include <windows.h>
+#include <format>
+#include <vector>
+
+#include "debug.h"
 #include "java.h"
-#include "os.h"
-#include "version.h"
 
-const Version JAVA_8(L"1.8"), JAVA_11(L"11");
+HLJavaVersion HLJavaVersion::INVALID = HLJavaVersion{};
 
-const LPCWSTR JDK_NEW = L"SOFTWARE\\JavaSoft\\JDK";
-const LPCWSTR JRE_NEW = L"SOFTWARE\\JavaSoft\\JRE";
-const LPCWSTR JDK_OLD = L"SOFTWARE\\JavaSoft\\Java Development Kit";
-const LPCWSTR JRE_OLD = L"SOFTWARE\\JavaSoft\\Java Runtime Environment";
+HLJavaVersion HLJavaVersion::FromJavaExecutable(const HLPath &filePath) {
+  UINT size = 0;
+  VS_FIXEDFILEINFO *pFileInfo;
+  DWORD dwSize = GetFileVersionInfoSizeW(filePath.path.c_str(), nullptr);
 
-bool oldJavaFound = false;
+  if (!dwSize) return INVALID;
 
-bool FindJavaByRegistryKey(HKEY rootKey, LPCWSTR subKey, std::wstring& path) {
+  std::vector<BYTE> data(dwSize);
+  if (!GetFileVersionInfoW(filePath.path.c_str(), 0, dwSize, &data[0])) {
+    return INVALID;
+  }
+
+  if (!VerQueryValueW(&data[0], L"\\", (LPVOID *)&pFileInfo, &size)) {
+    return INVALID;
+  }
+
+  return HLJavaVersion{.major = static_cast<uint16_t>((pFileInfo->dwFileVersionMS >> 16) & 0xFFFF),
+                       .minor = static_cast<uint16_t>((pFileInfo->dwFileVersionMS >> 0) & 0xFFFF),
+                       .build = static_cast<uint16_t>((pFileInfo->dwFileVersionLS >> 16) & 0xFFFF),
+                       .revision = static_cast<uint16_t>((pFileInfo->dwFileVersionLS >> 0) & 0xFFFF)};
+}
+
+HLJavaVersion HLJavaVersion::FromString(const std::wstring &versionString) {
+  HLJavaVersion version = {};
+
+  uint16_t ver[4] = {0, 0, 0, 0};  // major, minor, build, revision
+
+  int idx = 0;
+
+  for (auto &ch : versionString) {
+    if (idx >= 4) {
+      break;
+    }
+    if (ch == L'.' || ch == L'_') {
+      if (idx == 0 && ver[0] == 1) {
+        // For legacy Java version 1.x
+        ver[0] = 0;
+      } else {
+        idx++;
+      }
+    } else if (ch >= L'0' && ch <= L'9') {
+      ver[idx] = ver[idx] * 10 + (ch - L'0');
+    }
+  }
+
+  return HLJavaVersion{
+      .major = ver[0],
+      .minor = ver[1],
+      .build = ver[2],
+      .revision = ver[3],
+  };
+}
+
+bool HLLaunchJVM(const HLPath &javaExecutablePath, const HLJavaOptions &options,
+                 const std::optional<HLJavaVersion> &version) {
+  std::wstring command;
+  command += '"';
+  command += javaExecutablePath.path;
+  command += L'"';
+  if (options.jvmOptions.has_value()) {
+    command += L' ';
+    command += options.jvmOptions.value();
+  } else {
+    command += L" -Xmx1G -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=15";
+  }
+  command += L" -jar \"";
+  command += options.jarPath;
+  command += L'"';
+
+  STARTUPINFOW startupInfo{.cb = sizeof(STARTUPINFOW)};
+  PROCESS_INFORMATION processInformation{};
+
+  BOOL result = CreateProcessW(nullptr, &command[0], nullptr, nullptr, false, NORMAL_PRIORITY_CLASS, nullptr,
+                               options.workdir.path.c_str(), &startupInfo, &processInformation);
+  if (result) {
+    HLDebugLog(L"Successfully launched HMCL with " + javaExecutablePath.path);
+  } else {
+    HLDebugLog(L"Failed to launch HMCL with " + javaExecutablePath.path);
+  }
+
+  return result;
+}
+
+void HLSearchJavaInDir(HLJavaList &result, const HLPath &basedir, LPCWSTR javaExecutableName) {
+  HLDebugLogVerbose(std::format(L"Searching in directory: {}", basedir.path));
+
+  HLPath pattern = basedir;
+  pattern /= L"*";
+
+  WIN32_FIND_DATA data;
+  HANDLE hFind = FindFirstFileW(pattern.path.c_str(), &data);  // Search all subdirectory
+  if (hFind != INVALID_HANDLE_VALUE) {
+    do {
+      std::wstring fileName = data.cFileName;
+      if (fileName != L"." && fileName != L"..") {
+        result.TryAdd(basedir / data.cFileName / L"bin" / javaExecutableName);
+      }
+    } while (FindNextFile(hFind, &data));
+    FindClose(hFind);
+  }
+}
+
+static const LPCWSTR VENDORS[] = {L"Java",         L"Microsoft", L"BellSoft", L"Zulu", L"Eclipse Foundation",
+                                  L"AdoptOpenJDK", L"Semeru"};
+
+void HLSearchJavaInProgramFiles(HLJavaList &result, const HLPath &programFiles, LPCWSTR javaExecutableName) {
+  for (LPCWSTR vendorDir : VENDORS) {
+    HLPath dir = programFiles / vendorDir;
+    HLSearchJavaInDir(result, dir, javaExecutableName);
+  }
+}
+
+void HLSearchJavaInRegistry(HLJavaList &result, LPCWSTR subKey, LPCWSTR javaExecutableName) {
+  HLDebugLogVerbose(std::format(L"Searching in registry key: HKEY_LOCAL_MACHINE\\{}", subKey));
+
+  constexpr int MAX_KEY_LENGTH = 255;
+
   WCHAR javaVer[MAX_KEY_LENGTH];  // buffer for subkey name, special for
                                   // JavaVersion
+  WCHAR javaHome[MAX_PATH];       // buffer for JavaHome value
   DWORD cbName;                   // size of name string
   DWORD cSubKeys = 0;             // number of subkeys
   DWORD cbMaxSubKey;              // longest subkey size
   DWORD cValues;                  // number of values for key
   DWORD cchMaxValue;              // longest value name
   DWORD cbMaxValueData;           // longest value data
-  LSTATUS result;
 
   HKEY hKey;
-  if (ERROR_SUCCESS !=
-      (result =
-           RegOpenKeyEx(rootKey, subKey, 0, KEY_WOW64_64KEY | KEY_READ, &hKey)))
-    return false;
+  if (RegOpenKeyExW(HKEY_LOCAL_MACHINE, subKey, 0, KEY_WOW64_64KEY | KEY_READ, &hKey) != ERROR_SUCCESS) {
+    return;
+  }
 
-  RegQueryInfoKey(hKey,             // key handle
-                  NULL,             // buffer for class name
-                  NULL,             // size of class string
-                  NULL,             // reserved
-                  &cSubKeys,        // number of subkeys
-                  &cbMaxSubKey,     // longest subkey size
-                  NULL,             // longest class string
-                  &cValues,         // number of values for this key
-                  &cchMaxValue,     // longest value name
-                  &cbMaxValueData,  // longest value data
-                  NULL,             // security descriptor
-                  NULL);            // last write time
+  RegQueryInfoKeyW(hKey, nullptr, nullptr, nullptr, &cSubKeys, &cbMaxSubKey, nullptr, &cValues, &cchMaxValue,
+                   &cbMaxValueData, nullptr, nullptr);
 
-  if (!cSubKeys) return false;
+  if (!cSubKeys) {
+    RegCloseKey(hKey);
+    return;
+  }
 
-  bool flag = false;
   for (DWORD i = 0; i < cSubKeys; ++i) {
     cbName = MAX_KEY_LENGTH;
-    if (ERROR_SUCCESS != (result = RegEnumKeyEx(hKey, i, javaVer, &cbName, NULL,
-                                                NULL, NULL, NULL)))
+    if (RegEnumKeyExW(hKey, i, javaVer, &cbName, nullptr, nullptr, nullptr, nullptr) != ERROR_SUCCESS) {
       continue;
-
-    HKEY javaKey;
-    if (ERROR_SUCCESS != RegOpenKeyEx(hKey, javaVer, 0, KEY_READ, &javaKey))
-      continue;
-
-    if (ERROR_SUCCESS == MyRegQueryValue(javaKey, L"JavaHome", REG_SZ, path)) {
-      if (Version(javaVer) < JAVA_8)
-        oldJavaFound = true;
-      else
-        flag = true;
     }
 
-    if (flag) break;
+    DWORD dataLength = sizeof(javaHome);
+    if (RegGetValueW(hKey, javaVer, L"JavaHome", RRF_RT_REG_SZ, nullptr, &javaHome[0], &dataLength) != ERROR_SUCCESS) {
+      continue;
+    }
+
+    result.TryAdd(HLPath(javaHome) / L"bin" / javaExecutableName);
   }
 
   RegCloseKey(hKey);
-
-  return flag;
 }
 
-bool FindJavaInRegistry(std::wstring& path) {
-  return FindJavaByRegistryKey(HKEY_LOCAL_MACHINE, JDK_NEW, path) ||
-         FindJavaByRegistryKey(HKEY_LOCAL_MACHINE, JRE_NEW, path) ||
-         FindJavaByRegistryKey(HKEY_LOCAL_MACHINE, JDK_OLD, path) ||
-         FindJavaByRegistryKey(HKEY_LOCAL_MACHINE, JRE_OLD, path);
-}
+bool HLJavaList::TryAdd(const HLPath &javaExecutable) {
+  if (!javaExecutable.IsRegularFile()) {
+    return false;
+  }
+  if (paths.contains(javaExecutable.path)) {
+    HLDebugLogVerbose(std::format(L"Ignore duplicate Java {}", javaExecutable.path));
+    return false;
+  }
 
-bool FindJava(std::wstring& path) {
-  return ERROR_SUCCESS == MyGetEnvironmentVariable(L"HMCL_JAVA_HOME", path) ||
-         ERROR_SUCCESS == MyGetEnvironmentVariable(L"JAVA_HOME", path) ||
-         FindJavaInRegistry(path);
+  auto version = HLJavaVersion::FromJavaExecutable(javaExecutable);
+  HLDebugLogVerbose(std::format(L"Found Java {}, Version {}", javaExecutable.path, version.ToWString(),
+                                version.IsAcceptable() ? L"" : L", Ignored"));
+  if (!version.IsAcceptable()) {
+    return false;
+  }
+
+  HLJavaRuntime javaRuntime = {
+      .version = version,
+      .executablePath = javaExecutable,
+  };
+
+  paths.insert(javaExecutable.path);
+  runtimes.push_back(javaRuntime);
+  return true;
 }

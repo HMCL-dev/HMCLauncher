@@ -1,0 +1,3 @@
+#pragma once
+
+#define HMCL_LAUNCHER_VERSION L"@PROJECT_VERSION@"

@@ -5,7 +5,7 @@ HMCL Launcher for Windows.
 ## Build
 
 ```powershell
-msbuild /p:Configuration=Release /t:Rebuild .
+cmake -A Win32 -B build && cmake --build build --config Release
 ```
 
 ## License

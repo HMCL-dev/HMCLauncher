@@ -29,21 +29,23 @@ jobs:
           java-version: 11
           java-package: 'jdk+fx'
       - name: Build HMCLauncher
-        run: msbuild /p:Configuration=Release /t:Rebuild .
+        run: |
+          cmake -A Win32 -B build
+          cmake --build build --config Release
       - name: Create checksum file
-        run: Out-File -InputObject (Get-FileHash -Path .\Release\HMCLauncher.exe -Algorithm SHA256).Hash.ToLower() -FilePath .\Release\HMCLauncher.exe.sha256 -NoNewline
+        run: Out-File -InputObject (Get-FileHash -Path build\Release\HMCLauncher.exe -Algorithm SHA256).Hash.ToLower() -FilePath build\Release\HMCLauncher.exe.sha256 -NoNewline
       - name: Build HMCL
         run: |
-          $env:HMCL_LAUNCHER_EXE="$env:GITHUB_WORKSPACE\Release\HMCLauncher.exe"
-          Set-Location HMCL-Build
+          $env:HMCL_LAUNCHER_EXE="$env:GITHUB_WORKSPACE\build\Release\HMCLauncher.exe"
+          Set-Location "$env:GITHUB_WORKSPACE\HMCL-Build"
           .\gradlew makeExecutables --no-daemon
       - name: Copy Artifacts
         run: |
           New-Item -Type Directory -Path Artifacts
           Copy-Item -Path HMCL-Build\HMCL\build\libs\*.exe -Destination Artifacts
           Copy-Item -Path HMCL-Build\HMCL\build\libs\*.exe.sha256 -Destination Artifacts
-          Copy-Item -Path Release\HMCLauncher.exe -Destination Artifacts
-          Copy-Item -Path Release\HMCLauncher.exe.sha256 -Destination Artifacts
+          Copy-Item -Path build\Release\HMCLauncher.exe -Destination Artifacts
+          Copy-Item -Path build\Release\HMCLauncher.exe.sha256 -Destination Artifacts
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
