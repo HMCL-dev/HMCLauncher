@@ -149,23 +149,10 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
   {
     const auto paths = HLGetEnvVar(L"PATH");
     if (paths.has_value()) {
-      std::size_t pos = 0;
-      while (pos < paths->size()) {
-        auto end = paths->find(L';', pos);
-
-        if (end == std::wstring::npos) {
-          end = paths->size();
-        }
-
-        auto pathCount = end - pos;
-        if (pathCount > 0) {  // Not empty
-          HLPath path = paths->substr(pos, pathCount);
-          path /= javaExecutableName;
-          javaRuntimes.TryAdd(path);
-        }
-
-        pos = end + 1;
-      }
+      HLDebugLogVerbose(L"Searching in PATH");
+      HLSearchJavaInPath(javaRuntimes, paths.value(), javaExecutableName);
+    } else {
+      HLDebugLog(L"PATH: Not Found");
     }
   }
 

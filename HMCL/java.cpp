@@ -1,4 +1,5 @@
 #include <windows.h>
+#include <cwctype>
 #include <format>
 #include <vector>
 
@@ -162,6 +163,36 @@ void HLSearchJavaInRegistry(HLJavaList &result, LPCWSTR subKey, LPCWSTR javaExec
   }
 
   RegCloseKey(hKey);
+}
+
+void HLSearchJavaInPath(HLJavaList &result, const std::wstring &path, LPCWSTR javaExecutableName) {
+  std::size_t pos = 0;
+  while (pos < path.size()) {
+    auto end = path.find(L';', pos);
+
+    if (end == std::wstring::npos) {
+      end = path.size();
+    }
+
+    // Skip leading spaces
+    while (pos < end && std::iswspace(path.at(pos))) {
+      pos++;
+    }
+
+    // Skip trailing spaces
+    auto pathCount = end - pos;
+    while (pathCount > 0 && std::iswspace(path.at(pos + pathCount - 1))) {
+      pathCount--;
+    }
+
+    if (pathCount > 0) {  // Not empty
+      HLPath javaExecutable = path.substr(pos, pathCount);
+      javaExecutable /= javaExecutableName;
+      result.TryAdd(javaExecutable);
+    }
+
+    pos = end + 1;
+  }
 }
 
 bool HLJavaList::TryAdd(const HLPath &javaExecutable) {
