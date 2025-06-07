@@ -188,7 +188,6 @@ void HLSearchJavaInPath(HLJavaList &result, const std::wstring &path, LPCWSTR ja
     if (pathCount > 0) {  // Not empty
       HLPath javaExecutable = path.substr(pos, pathCount);
       javaExecutable /= javaExecutableName;
-
       HLDebugLogVerbose(L"Checking " + javaExecutable.path);
       result.TryAdd(javaExecutable);
     }
