@@ -67,3 +67,5 @@ void HLSearchJavaInDir(HLJavaList &result, const HLPath &basedir, LPCWSTR javaEx
 void HLSearchJavaInProgramFiles(HLJavaList &result, const HLPath &programFiles, LPCWSTR javaExecutableName);
 
 void HLSearchJavaInRegistry(HLJavaList &result, LPCWSTR subKey, LPCWSTR javaExecutableName);
+
+void HLSearchJavaInPath(HLJavaList &result, const std::wstring &path, LPCWSTR javaExecutableName);

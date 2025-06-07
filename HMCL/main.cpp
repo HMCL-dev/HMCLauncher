@@ -145,6 +145,17 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
     }
   }
 
+  // Search Java in PATH
+  {
+    const auto paths = HLGetEnvVar(L"PATH");
+    if (paths.has_value()) {
+      HLDebugLogVerbose(L"Searching in PATH");
+      HLSearchJavaInPath(javaRuntimes, paths.value(), javaExecutableName);
+    } else {
+      HLDebugLog(L"PATH: Not Found");
+    }
+  }
+
   // Search Java in C:\Program Files
   {
     std::optional<HLPath> programFilesPath;
