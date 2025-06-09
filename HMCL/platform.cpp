@@ -85,7 +85,12 @@ std::optional<std::wstring> HLGetEnvVar(LPCWSTR name) {
       return std::optional{out};
     }
 
-    size = res;
+    if (res == size) {
+      // I think it's not possible, but I'm not really sure, so do something to avoid an infinite loop.
+      size = res + 1;
+    } else {
+      size = res;
+    }
     out.resize(size);
   } while (true);
 }
