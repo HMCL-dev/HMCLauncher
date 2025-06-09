@@ -73,7 +73,7 @@ std::optional<std::wstring> HLGetEnvVar(LPCWSTR name) {
   DWORD size = MAX_PATH;
   std::wstring out(size, L'\0');
 
-  do {
+  while (size < 32 * 1024) {
     SetLastError(ERROR_SUCCESS);
     DWORD res = GetEnvironmentVariableW(name, &out[0], size);
     if (res == 0 && GetLastError() != ERROR_SUCCESS) {
@@ -92,7 +92,7 @@ std::optional<std::wstring> HLGetEnvVar(LPCWSTR name) {
       size = res;
     }
     out.resize(size);
-  } while (size < 32 * 1024);
+  }
 
   return std::nullopt;
 }
