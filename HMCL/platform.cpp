@@ -92,7 +92,9 @@ std::optional<std::wstring> HLGetEnvVar(LPCWSTR name) {
       size = res;
     }
     out.resize(size);
-  } while (true);
+  } while (size < 32 * 1024);
+
+  return std::nullopt;
 }
 
 std::optional<HLPath> HLGetEnvPath(LPCWSTR name) {
