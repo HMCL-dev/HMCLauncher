@@ -70,18 +70,31 @@ std::optional<std::pair<HLPath, std::wstring>> HLGetSelfPath() {
 }
 
 std::optional<std::wstring> HLGetEnvVar(LPCWSTR name) {
-  DWORD res, size = MAX_PATH;
-  std::wstring out = {};
-  out.resize(size);
-  while ((res = GetEnvironmentVariableW(name, &out[0], size)) == size) {
-    out.resize(size += MAX_PATH);
+  DWORD size = MAX_PATH;
+  std::wstring out(size, L'\0');
+
+  while (size < 32 * 1024) {
+    SetLastError(ERROR_SUCCESS);
+    DWORD res = GetEnvironmentVariableW(name, &out[0], size);
+    if (res == 0 && GetLastError() != ERROR_SUCCESS) {
+      return std::nullopt;
+    }
+
+    if (res < size) {
+      out.resize(res);
+      return std::optional{out};
+    }
+
+    if (res == size) {
+      // I think it's not possible, but I'm not really sure, so do something to avoid an infinite loop.
+      size = res + 1;
+    } else {
+      size = res;
+    }
+    out.resize(size);
   }
-  if (res != 0) {
-    out.resize(size - MAX_PATH + res);
-    return std::optional{out};
-  } else {
-    return std::nullopt;
-  }
+
+  return std::nullopt;
 }
 
 std::optional<HLPath> HLGetEnvPath(LPCWSTR name) {
