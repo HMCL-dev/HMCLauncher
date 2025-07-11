@@ -8,7 +8,7 @@ HLI18N HLI18N::Instance() {
                      L"The Java path specified by HMCL_JAVA_HOME is invalid. Please update it to a valid Java "
                      "installation path or remove this environment variable.",
                  .errorJavaNotFound =
-                     L"HMCL requires Java 11 or higher to run,\n"
+                     L"HMCL requires Java 11 or later to run,\n"
                      L"Click 'OK' to start downloading java.\n"
                      L"Please restart HMCL after installing Java."};
 
