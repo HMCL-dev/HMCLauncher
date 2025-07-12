@@ -190,11 +190,11 @@ void HLSearchJavaInPath(HLJavaList &result, const std::wstring &path, LPCWSTR ja
       javaExecutable /= javaExecutableName;
 
       // https://github.com/HMCL-dev/HMCL/issues/4079
-      if (javaExecutable.path.find(L"\\Common Files\\Oracle\\Java\\") != std::wstring::npos) {
-        HLDebugLogVerbose(std::format(L"Ignore Oracle Java {}", javaExecutable.path));
-      } else {
+      if (javaExecutable.path.find(L"\\Common Files\\Oracle\\Java\\") == std::wstring::npos) {
         HLDebugLogVerbose(L"Checking " + javaExecutable.path);
         result.TryAdd(javaExecutable);
+      } else {
+        HLDebugLogVerbose(std::format(L"Ignore Oracle Java {}", javaExecutable.path));
       }
     }
     pos = end + 1;
