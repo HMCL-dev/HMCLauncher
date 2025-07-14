@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 project(HMCLauncher
         LANGUAGES CXX
-        VERSION 3.6.0.4
+        VERSION 3.6.0.5
 )
 
 set(CMAKE_CXX_STANDARD 20)
