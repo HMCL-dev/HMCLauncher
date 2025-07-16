@@ -1,5 +1,3 @@
-import java.security.MessageDigest
-
 /*
  * Hello Minecraft! Launcher
  * Copyright (C) 2025 huangyuhui <huanghongxun2008@126.com> and contributors
@@ -17,6 +15,8 @@ import java.security.MessageDigest
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+
+import java.security.MessageDigest
 
 plugins {
     id("java-library")
