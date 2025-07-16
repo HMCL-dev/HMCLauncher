@@ -1,0 +1,5 @@
+*.class
+.gradle
+build/
+.kotlin/
+gradle.properties
