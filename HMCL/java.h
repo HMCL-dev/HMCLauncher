@@ -11,7 +11,6 @@
 #include "path.h"
 
 constexpr std::uint16_t HL_EXPECTED_JAVA_MAJOR_VERSION = 11;
-constexpr std::uint16_t HL_LEGACY_JAVA_MAJOR_VERSION = 8;  // TODO: Support for Java 8 will be removed in the future
 
 struct HLJavaVersion {
   static HLJavaVersion INVALID;
@@ -27,7 +26,7 @@ struct HLJavaVersion {
   std::strong_ordering operator<=>(const HLJavaVersion &other) const = default;
 
   [[nodiscard]] bool IsAcceptable() const {
-    return major >= HL_EXPECTED_JAVA_MAJOR_VERSION || major == HL_LEGACY_JAVA_MAJOR_VERSION;
+    return major >= HL_EXPECTED_JAVA_MAJOR_VERSION;
   }
 
   [[nodiscard]] std::wstring ToWString() const {
