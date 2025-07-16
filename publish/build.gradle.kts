@@ -75,6 +75,10 @@ java {
     withSourcesJar()
 }
 
+tasks.withType<GenerateModuleMetadata> {
+    enabled = false
+}
+
 publishing {
     publications {
         create<MavenPublication>("hmclauncher") {
