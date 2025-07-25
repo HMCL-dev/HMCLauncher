@@ -178,10 +178,6 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
   HLSearchJavaInRegistry(javaRuntimes, L"SOFTWARE\\JavaSoft\\JDK", javaExecutableName);
   HLSearchJavaInRegistry(javaRuntimes, L"SOFTWARE\\JavaSoft\\JRE", javaExecutableName);
 
-  // TODO: They are for Java 8 or earlier and will be removed in the future.
-  HLSearchJavaInRegistry(javaRuntimes, L"SOFTWARE\\JavaSoft\\Java Development Kit", javaExecutableName);
-  HLSearchJavaInRegistry(javaRuntimes, L"SOFTWARE\\JavaSoft\\Java Runtime Environment", javaExecutableName);
-
   // Try to launch JVM
 
   if (javaRuntimes.runtimes.empty()) {
