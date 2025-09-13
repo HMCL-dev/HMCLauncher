@@ -13,7 +13,7 @@
 #include "java.h"
 
 int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow) {
-  HLVerboseOutput = HLGetEnvVar(L"HMCL_LAUNCHER_VERBOSE_OUTPUT").value_or(L"") == L"true";
+  HLVerboseOutput = HLGetEnvVar(L"HMCL_LAUNCHER_VERBOSE_OUTPUT").value_or(L"") != L"false";
 
   LPCWSTR javaExecutableName;
   if (HLAttachConsole()) {
