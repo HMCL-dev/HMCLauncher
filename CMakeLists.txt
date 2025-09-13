@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 project(HMCLauncher
         LANGUAGES CXX
-        VERSION 3.7.0.0
+        VERSION 3.7.0.1
 )
 
 set(CMAKE_CXX_STANDARD 20)
@@ -35,4 +35,4 @@ add_executable(HMCLauncher WIN32
         HMCL/path.cpp HMCL/path.h
         HMCL/debug.cpp HMCL/debug.h
 )
-target_link_libraries(HMCLauncher PRIVATE Shlwapi Version)
+target_link_libraries(HMCLauncher PRIVATE shlwapi version)
