@@ -9,6 +9,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_WIN32_EXECUTABLE ON)
 
+set(HMCL_EXPECTED_JAVA_MAJOR_VERSION 17)
+
 add_compile_definitions(UNICODE _UNICODE)
 add_compile_definitions(WINVER=0x0601 _WIN32_WINNT=0x0601) # Windows 7
 

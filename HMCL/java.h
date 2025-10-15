@@ -8,9 +8,8 @@
 #include <unordered_set>
 #include <vector>
 
+#include "config.h"
 #include "path.h"
-
-constexpr std::uint16_t HL_EXPECTED_JAVA_MAJOR_VERSION = 11;
 
 struct HLJavaVersion {
   static HLJavaVersion INVALID;
@@ -26,7 +25,7 @@ struct HLJavaVersion {
   std::strong_ordering operator<=>(const HLJavaVersion &other) const = default;
 
   [[nodiscard]] bool IsAcceptable() const {
-    return major >= HL_EXPECTED_JAVA_MAJOR_VERSION;
+    return major >= HMCL_EXPECTED_JAVA_MAJOR_VERSION;
   }
 
   [[nodiscard]] std::wstring ToWString() const {
