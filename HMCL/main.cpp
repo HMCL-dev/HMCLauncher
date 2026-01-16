@@ -130,21 +130,6 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
     }
   }
 
-  {
-    const auto appDataPath = HLGetEnvPath(L"APPDATA");
-    if (appDataPath.has_value() && !appDataPath.value().path.empty()) {
-      HLPath hmclJavaDir = appDataPath.value() / L".hmcl\\java";
-      if (isARM64) {
-        hmclJavaDir /= L"windows-arm64";
-      } else if (isX64) {
-        hmclJavaDir /= L"windows-x86_64";
-      } else {
-        hmclJavaDir /= L"windows-x86";
-      }
-      HLSearchJavaInDir(javaRuntimes, hmclJavaDir, javaExecutableName);
-    }
-  }
-
   // Search Java in PATH
   {
     const auto paths = HLGetEnvVar(L"PATH");
