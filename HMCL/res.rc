@@ -1,0 +1,35 @@
+#include <windows.h>
+
+#define HMCL_LAUNCHER_VERSION "3.7.0.1"
+#define HMCL_EXPECTED_JAVA_MAJOR_VERSION 17
+
+IDI_HMCL ICON "resources/HMCL.ico"
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION 3,7,0,1
+PRODUCTVERSION 3,7,0,1
+FILEFLAGSMASK 0x3fL
+FILEFLAGS 0x0L
+FILEOS 0x40004L
+FILETYPE 0x1L
+FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "080404b0"
+        BEGIN
+            VALUE "CompanyName", "huanghongxun"
+            VALUE "FileDescription", "Hello Minecraft! Launcher For Windows"
+            VALUE "FileVersion", HMCL_LAUNCHER_VERSION
+            VALUE "InternalName", "HMCL.exe"
+            VALUE "LegalCopyright", "Copyright (C) 2025 huangyuhui"
+            VALUE "OriginalFilename", "HMCL.exe"
+            VALUE "ProductName", "Hello Minecraft! Launcher"
+            VALUE "ProductVersion", HMCL_LAUNCHER_VERSION
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x804, 1200
+    END
+END

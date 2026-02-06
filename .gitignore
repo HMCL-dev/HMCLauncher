@@ -1,7 +1,6 @@
-Debug
-Release
-.vs
-*.APS
-cmake-build-*/
+.vscode/
 .idea/
-/build/
+build/
+HMCL/target/
+HMCL/Cargo.lock
+HMCL/logs/

@@ -2,10 +2,13 @@
 
 HMCL Launcher for Windows.
 
-## Build
-
-```powershell
-cmake -A Win32 -B build && cmake --build build --config Release
+## Setup
+1. Clone this repository.
+2. Run `cargo run` in your terminal.
+```bash
+git clone https://github.com/HMCL-dev/HMCLauncher.git
+cd HMCLauncher
+cargo run
 ```
 
 ## License
